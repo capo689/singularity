@@ -1,10 +1,105 @@
 const canvas = document.getElementById("singularity-webgl");
 const pointer = { x: 0, y: 0 };
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
 window.addEventListener("pointermove", (event) => {
   pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
   pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
 });
+
+function wrapWords(element) {
+  if (!element || element.dataset.wordsWrapped === "true") return;
+  const words = element.textContent.trim().split(/\s+/);
+  element.textContent = "";
+  words.forEach((word, index) => {
+    const span = document.createElement("span");
+    span.className = "word";
+    span.style.setProperty("--word-index", index);
+    span.textContent = word;
+    element.append(span);
+    if (index < words.length - 1) element.append(" ");
+  });
+  element.dataset.wordsWrapped = "true";
+}
+
+function initScrollFlair() {
+  const revealTargets = [
+    ".hero-copy-wrap",
+    ".hero-copy",
+    ".actions",
+    ".section h2",
+    ".section-intro",
+    ".feature-card",
+    ".metric-grid article",
+    ".screen-shot",
+    ".safety-band"
+  ];
+
+  document.querySelectorAll("h1, .section h2").forEach((element) => {
+    element.classList.add("fold-text", "reveal");
+    wrapWords(element);
+  });
+
+  document.querySelectorAll(revealTargets.join(",")).forEach((element, index) => {
+    element.classList.add("reveal");
+    element.style.setProperty("--reveal-delay", `${Math.min(index % 4, 3) * 70}ms`);
+  });
+
+  if (!("IntersectionObserver" in window) || reduceMotion.matches) {
+    document.querySelectorAll(".reveal").forEach((element) => element.classList.add("is-visible"));
+  } else {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { rootMargin: "0px 0px -14% 0px", threshold: 0.16 });
+    document.querySelectorAll(".reveal").forEach((element) => observer.observe(element));
+  }
+
+  const parallaxTargets = [
+    { element: document.querySelector(".logo-wire"), depth: -0.055 },
+    { element: document.querySelector(".signal-strip"), depth: 0.045 },
+    { element: document.querySelector(".desktop-shot"), depth: -0.035 },
+    { element: document.querySelector(".mobile-shot"), depth: 0.055 },
+    ...Array.from(document.querySelectorAll(".feature-card")).map((element, index) => ({ element, depth: index % 2 ? 0.025 : -0.018 })),
+    ...Array.from(document.querySelectorAll(".metric-grid article")).map((element, index) => ({ element, depth: index % 2 ? -0.02 : 0.026 }))
+  ].filter((item) => item.element);
+
+  let ticking = false;
+  function updateParallax() {
+    ticking = false;
+    if (reduceMotion.matches) return;
+    const viewportMid = window.innerHeight / 2;
+    document.documentElement.style.setProperty("--parallax-x", `${pointer.x * 18}px`);
+    document.documentElement.style.setProperty("--parallax-y", `${window.scrollY * 0.02}px`);
+    document.querySelectorAll(".section").forEach((section) => {
+      const rect = section.getBoundingClientRect();
+      section.style.setProperty("--section-shift", `${rect.top - viewportMid}px`);
+    });
+    parallaxTargets.forEach(({ element, depth }) => {
+      const rect = element.getBoundingClientRect();
+      const offset = (rect.top + rect.height / 2 - viewportMid) * depth;
+      element.style.setProperty("--parallax-y", `${offset.toFixed(2)}px`);
+    });
+  }
+
+  function requestParallax() {
+    if (!ticking) {
+      ticking = true;
+      requestAnimationFrame(updateParallax);
+    }
+  }
+
+  window.addEventListener("scroll", requestParallax, { passive: true });
+  window.addEventListener("resize", requestParallax);
+  window.addEventListener("pointermove", requestParallax, { passive: true });
+  updateParallax();
+}
+
+initScrollFlair();
 
 function makeSPath(count = 130) {
   const points = [];
@@ -20,6 +115,7 @@ function makeSPath(count = 130) {
 }
 
 function initCanvasFallback() {
+  if (!canvas) return;
   const ctx = canvas.getContext("2d");
   canvas.dataset.engine = "canvas-fallback";
   let width = 0;
@@ -69,6 +165,7 @@ function initCanvasFallback() {
 }
 
 function initThree(THREE) {
+  if (!canvas) return;
   canvas.dataset.engine = "three.js r160";
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(54, window.innerWidth / window.innerHeight, 0.1, 100);
@@ -160,9 +257,11 @@ function initThree(THREE) {
   animate(0);
 }
 
-try {
-  const THREE = await import("https://unpkg.com/three@0.160.0/build/three.module.js");
-  initThree(THREE);
-} catch {
-  initCanvasFallback();
+if (canvas) {
+  try {
+    const THREE = await import("https://unpkg.com/three@0.160.0/build/three.module.js");
+    initThree(THREE);
+  } catch {
+    initCanvasFallback();
+  }
 }
