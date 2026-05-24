@@ -2,7 +2,7 @@
 
 Public website for Singularity SEO.
 
-Singularity SEO connects WordPress to ChatGPT for governed SEO audits, batch proposals, rollback, Search Console reporting and rank tracking.
+Singularity SEO connects WordPress to ChatGPT for expert SEO strategy, competitive review, search and AI discovery optimization, governed batch proposals, rollback, Search Console reporting and rank tracking.
 
 ## Pages
 
