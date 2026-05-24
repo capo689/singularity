@@ -181,6 +181,14 @@ h1 {
   font-size: clamp(18px, 2vw, 22px);
 }
 
+.support-email {
+  font-weight: 900;
+}
+
+.support-email a {
+  color: var(--cyan);
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;
