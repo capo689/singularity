@@ -1,6 +1,6 @@
 # Singularity SEO
 
-Public website for Singularity SEO.
+This repository contains the public product website and documentation for Singularity SEO. The production MCP controller is available at https://github.com/capo689/Controller. The WordPress plugin, protected governance, and proprietary operating logic are maintained separately.
 
 Singularity SEO connects WordPress to ChatGPT for expert SEO strategy, competitive review, search and AI discovery optimization, governed batch proposals, rollback, Search Console reporting and rank tracking.
 
